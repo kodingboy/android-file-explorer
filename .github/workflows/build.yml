@@ -1,82 +1,18 @@
-name: Build Android APK
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
+name: Build APK
+on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-    
     steps:
-    - name: 📥 Checkout Repository
-      uses: actions/checkout@v3
-    
-    - name: 🐍 Set up Python 3.9
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.9'
-    
-    - name: 📦 Install System Dependencies
+    - name: Build APK
       run: |
-        sudo apt-get update
-        sudo apt-get install -y openjdk-11-jdk unzip wget zip
-        sudo apt-get install -y build-essential libffi-dev libssl-dev
-    
-    - name: 🔧 Install Python Build Tools
-      run: |
-        python -m pip install --upgrade pip
-        pip install buildozer==1.5.0
-        pip install cython==0.29.33
-    
-    - name: 📝 Accept Android SDK Licenses
-      run: |
-        mkdir -p $HOME/.android
-        echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > $HOME/.android/licenses/android-sdk-license
-        echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $HOME/.android/licenses/android-sdk-license
-    
-    - name: 🔨 Build APK with Buildozer
-      run: |
-        cd app
+        pip install buildozer cython==0.29.33
         buildozer android debug
-    
-    - name: 📤 Upload APK as Artifact
-      uses: actions/upload-artifact@v3
-      if: success()
+    - uses: actions/upload-artifact@v3
       with:
-        name: fileexplorer-apk
-        path: app/bin/*.apk
-        retention-days: 30
-    
-    - name: 📋 Show Build Results
-      if: always()
-      run: |
-        echo "=== Checking for APK ==="
-        if ls app/bin/*.apk 1> /dev/null 2>&1; then
-          echo "✅ APK built successfully!"
-          ls -lh app/bin/*.apk
-        else
-          echo "❌ APK build failed"
-          echo "=== Last 50 lines of build log ==="
-          tail -50 app/.buildozer/logs/buildozer.log || echo "No log file found"
-        fi
-```
-
-4. **Scroll abajo** y haz clic en "Commit changes"
-
----
-
-### **Paso 4: Verificar la Estructura**
-
-Tu repositorio ahora debería verse así:
-```
-android-file-explorer/
-├── .github/
-│   └── workflows/
-│       └── build.yml
-├── app/
-│   ├── main.py
-│   └── buildozer.spec
-└── README.md
+        name: apk
+        path: bin/*.apk
