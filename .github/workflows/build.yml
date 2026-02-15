@@ -1,0 +1,79 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v3
+    
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: 📦 Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openjdk-11-jdk unzip wget
+    
+    - name: 🔧 Install build tools
+      run: |
+        pip install --upgrade pip
+        pip install buildozer==1.5.0
+        pip install cython==0.29.33
+    
+    - name: 📝 Accept Android licenses
+      run: |
+        mkdir -p ~/.android
+        echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/licenses/android-sdk-license
+    
+    - name: 🔨 Build APK
+      run: |
+        cd app
+        buildozer android debug
+      continue-on-error: false
+    
+    - name: 📤 Upload APK
+      uses: actions/upload-artifact@v3
+      if: success()
+      with:
+        name: android-apk
+        path: app/bin/*.apk
+        retention-days: 30
+    
+    - name: 📋 Build summary
+      if: always()
+      run: |
+        if [ -f app/bin/*.apk ]; then
+          echo "✅ APK built successfully"
+          ls -lh app/bin/*.apk
+        else
+          echo "❌ APK build failed"
+          tail -100 app/.buildozer/logs/buildozer.log
+        fi
+```
+
+4. **Scroll abajo** y haz clic en "Commit new file"
+
+---
+
+### **Paso 5: Organizar los Archivos**
+
+Tu repositorio debe tener esta estructura:
+```
+android-file-explorer/
+├── .github/
+│   └── workflows/
+│       └── build.yml
+├── app/
+│   ├── main.py
+│   └── buildozer.spec
+└── README.md
